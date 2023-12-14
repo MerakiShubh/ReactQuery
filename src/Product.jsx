@@ -1,60 +1,68 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useQuery } from "react-query";
+import { useParams } from "react-router-dom";
+import { useMutation } from "react-query";
+import axios from "axios";
 
 const Product = () => {
-    const params = useParams();
-    // Mutations
-    const mutation = useMutation({
-        mutationFn: (newProduct) => {
-            return axios.put(`https://dummyjson.com/products/${params.productId}`, newProduct);
-        },
-    });
+  const params = useParams();
 
-    const fetchProduct = async () => {
-        const response = await fetch(`https://dummyjson.com/products/${params.productId}`);
-        const data = await response.json();
-        return data;
-    };
+  // useMutation
+  const mutation = useMutation(
+    // Instead of an object, pass a function that returns the promise
+    (newProduct) =>
+      axios.put(
+        `https://dummyjson.com/products/${params.productId}`,
+        newProduct
+      )
+  );
 
-    const {
-        isLoading,
-        error,
-        data: product,
-    } = useQuery({
-        queryKey: ['product', params.productId],
-        queryFn: fetchProduct,
-        // staleTime: 10000,
-    });
-
-    if (isLoading) {
-        return <h3>Loading...</h3>;
-    }
-
-    if (error) {
-        return <h3>Error: {error.message}</h3>;
-    }
-
-    if (mutation.isLoading) {
-        return <h3>Updating...</h3>;
-    }
-
-    if (mutation.isError) {
-        return <h3>Error while updating. {mutation.error.message}</h3>;
-    }
-
-    return (
-        <>
-            <div>Product: {product.title}</div>
-
-            <button
-                onClick={() => {
-                    mutation.mutate({ title: 'Updated product' });
-                }}>
-                Create product
-            </button>
-        </>
+  const fetchProducts = async () => {
+    const response = await fetch(
+      `https://dummyjson.com/products/${params.productId}`
     );
+    const data = await response.json();
+    return data;
+  };
+
+  const {
+    isLoading,
+    error,
+    data: product,
+  } = useQuery(["products", params.productId], fetchProducts);
+
+  if (isLoading) {
+    return <h3>Loading...</h3>;
+  }
+
+  if (error) {
+    return <h3>Error: {error.message}</h3>;
+  }
+
+  return (
+    <div>
+      <div>Product: {product.title}</div>
+      <div>
+        {mutation.isLoading ? (
+          "Updating product..."
+        ) : (
+          <>
+            {mutation.isError ? (
+              <div>An error occurred: {mutation.error.message}</div>
+            ) : null}
+
+            {mutation.isSuccess ? <div>Product updated!</div> : null}
+            <button
+              onClick={() => {
+                mutation.mutate({ title: "Updated Product" });
+              }}
+            >
+              Update Product
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Product;
